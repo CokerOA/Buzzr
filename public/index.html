@@ -1,0 +1,996 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Buzzr — Panel Alert System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f5f4f0;
+  --surface: #ffffff;
+  --surface2: #f0ede8;
+  --border: rgba(0,0,0,0.1);
+  --border2: rgba(0,0,0,0.18);
+  --text: #1a1917;
+  --muted: #6b6a66;
+  --hint: #9e9d99;
+  --teal: #1D9E75;
+  --teal-bg: #E1F5EE;
+  --teal-dark: #0F6E56;
+  --coral: #D85A30;
+  --coral-bg: #FAECE7;
+  --coral-dark: #712B13;
+  --amber: #BA7517;
+  --amber-bg: #FAEEDA;
+  --purple: #534AB7;
+  --purple-bg: #EEEDFE;
+  --blue: #378ADD;
+  --blue-bg: #E6F1FB;
+  --radius: 10px;
+  --radius-lg: 14px;
+}
+
+[data-theme="dark"] {
+  --bg: #111110;
+  --surface: #1c1c1a;
+  --surface2: #252523;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8;
+  --muted: #9e9d99;
+  --hint: #6b6a66;
+  --teal: #1D9E75;
+  --teal-bg: #0a2e22;
+  --teal-dark: #5DCAA5;
+  --coral: #E06B45;
+  --coral-bg: #2e1409;
+  --coral-dark: #F0997B;
+  --amber: #C98120;
+  --amber-bg: #2a1d06;
+  --purple: #7B74D4;
+  --purple-bg: #1a1840;
+  --blue: #5BA0E8;
+  --blue-bg: #0d1e33;
+}
+
+body, .card, .topbar, .modal, input, button { transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease; }
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* ── LOBBY ── */
+#lobby {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.lobby-logo { text-align: center; margin-bottom: 2.5rem; }
+.lobby-logo h1 { font-size: 48px; font-weight: 800; letter-spacing: -2px; line-height: 1; }
+.lobby-logo p { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 6px; letter-spacing: 1px; }
+
+.lobby-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  width: 100%;
+  max-width: 560px;
+}
+
+.lobby-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.lobby-card:hover { border-color: var(--border2); transform: translateY(-1px); }
+.lobby-card h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.lobby-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+.lobby-card .card-icon { font-size: 28px; margin-bottom: 10px; }
+
+.divider { grid-column: 1/-1; display: flex; align-items: center; gap: 12px; }
+.divider hr { flex: 1; border: none; border-top: 0.5px solid var(--border); }
+.divider span { font-size: 11px; color: var(--hint); font-family: 'DM Mono', monospace; }
+
+.join-row { grid-column: 1/-1; display: flex; gap: 8px; }
+.join-row input {
+  flex: 1; padding: 11px 14px;
+  border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: var(--surface); font-family: 'Syne', sans-serif; font-size: 14px;
+  color: var(--text); letter-spacing: 1px; text-transform: uppercase;
+  outline: none;
+}
+.join-row input:focus { border-color: var(--text); }
+.join-row button {
+  padding: 11px 20px; border-radius: var(--radius); border: none;
+  background: var(--text); color: var(--surface);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+}
+.join-row button:hover { opacity: 0.85; }
+
+/* ── APP SHELL ── */
+#app { display: none; min-height: 100vh; flex-direction: column; }
+#app.visible { display: flex; }
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: 0.75rem 1.25rem;
+  display: flex; align-items: center; gap: 12px;
+  position: sticky; top: 0; z-index: 10;
+}
+
+.topbar-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.session-badge {
+  font-family: 'DM Mono', monospace; font-size: 11px;
+  background: var(--surface2); color: var(--muted);
+  padding: 3px 10px; border-radius: 99px;
+  border: 0.5px solid var(--border);
+  cursor: pointer; user-select: all;
+}
+.session-badge:hover { border-color: var(--border2); }
+
+.ws-dot {
+  width: 7px; height: 7px; border-radius: 50%; margin-left: auto;
+  background: var(--hint); transition: background 0.3s;
+}
+.ws-dot.connected { background: var(--teal); }
+.ws-dot.error { background: var(--coral); }
+
+.role-pill {
+  font-size: 11px; font-weight: 600; padding: 4px 12px;
+  border-radius: 99px; font-family: 'DM Mono', monospace;
+}
+.role-pill.moderator { background: var(--text); color: var(--surface); }
+.role-pill.panelist { background: var(--teal-bg); color: var(--teal-dark); }
+
+/* ── LAYOUT ── */
+.main { flex: 1; padding: 1.25rem; display: grid; gap: 1rem; }
+.main.mod-layout { grid-template-columns: 1fr 280px; grid-template-rows: auto auto 1fr; }
+.main.pan-layout { max-width: 480px; margin: 0 auto; width: 100%; }
+
+.card {
+  background: var(--surface); border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.25rem;
+}
+.card-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 1.2px;
+  color: var(--muted); text-transform: uppercase;
+  font-family: 'DM Mono', monospace; margin-bottom: 1rem;
+}
+
+/* ── PANELIST LIST ── */
+.p-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 0; border-bottom: 0.5px solid var(--border);
+}
+.p-row:last-child { border-bottom: none; }
+.avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.p-name { font-size: 14px; font-weight: 600; }
+.p-email { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.p-info { flex: 1; min-width: 0; }
+.p-info .p-name, .p-info .p-email { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--hint); flex-shrink: 0;
+}
+.status-dot.on { background: var(--teal); }
+
+.buzz-btn {
+  padding: 8px 16px; font-size: 12px; font-weight: 700;
+  font-family: 'Syne', sans-serif; border-radius: 8px;
+  border: none; background: var(--text);
+  color: white; cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+  min-height: 36px;
+}
+.buzz-btn:hover { opacity: 0.82; }
+.buzz-btn:active { transform: scale(0.97); }
+.buzz-btn.active { background: var(--teal); color: white; }
+.buzz-btn.has-alerts { background: var(--coral); color: white; }
+.buzz-btn.remove-btn {
+  background: transparent; color: var(--hint);
+  border: 0.5px solid var(--border2); padding: 8px 10px; font-size: 13px;
+}
+.buzz-btn.remove-btn:hover { background: var(--coral-bg); color: var(--coral-dark); border-color: var(--coral); opacity: 1; }
+
+.add-form { display: flex; gap: 6px; margin-top: 0.75rem; flex-wrap: wrap; }
+.add-form input {
+  flex: 1; min-width: 100px; padding: 7px 10px;
+  border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: var(--surface2); font-family: 'Syne', sans-serif;
+  font-size: 13px; color: var(--text); outline: none;
+}
+.add-form input:focus { border-color: var(--text); background: var(--surface); }
+.add-form button {
+  padding: 7px 14px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: transparent;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; color: var(--text); white-space: nowrap;
+}
+.add-form button:hover { background: var(--surface2); }
+
+/* ── TIMER ── */
+.timer-wrap { display: flex; align-items: center; justify-content: center; padding: 0.75rem 0; }
+.timer-controls { display: flex; gap: 6px; }
+.timer-controls button, .t-btn {
+  flex: 1; padding: 8px 6px;
+  border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: transparent; font-family: 'Syne', sans-serif;
+  font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text);
+}
+.timer-controls button:hover, .t-btn:hover { background: var(--surface2); }
+.t-btn.primary { background: var(--text); color: var(--surface); border-color: var(--text); }
+.t-btn.primary:hover { opacity: 0.85; }
+.t-btn.danger { color: var(--coral); border-color: var(--coral); }
+.t-btn.danger:hover { background: var(--coral-bg); }
+
+/* ── QUICK BUZZ ── */
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 0.75rem; }
+.preset-btn {
+  padding: 10px 12px; border-radius: var(--radius);
+  border: 0.5px solid var(--border); background: var(--surface2);
+  cursor: pointer; text-align: left; transition: all 0.12s;
+}
+.preset-btn:hover { border-color: var(--border2); background: var(--surface); }
+.preset-btn.active { border: 1.5px solid var(--text); background: var(--surface); }
+.preset-label { font-size: 12px; font-weight: 600; color: var(--text); }
+.preset-sub { font-size: 10px; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 2px; }
+
+#custom-input {
+  display: none; width: 100%; padding: 8px 10px; margin-bottom: 8px;
+  border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: var(--surface2); font-family: 'Syne', sans-serif;
+  font-size: 13px; color: var(--text); outline: none;
+}
+#custom-input:focus { border-color: var(--text); }
+
+.buzz-all-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius); border: none;
+  background: var(--text); color: var(--surface);
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.2px;
+}
+.buzz-all-btn:hover { opacity: 0.85; }
+.buzz-all-btn:active { transform: scale(0.98); }
+.buzz-all-btn.fired { background: var(--teal); }
+
+/* ── LOG ── */
+.log-list { max-height: 220px; overflow-y: auto; }
+.log-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 0; border-bottom: 0.5px solid var(--border);
+  animation: fadeSlide 0.25s ease;
+}
+.log-item:last-child { border-bottom: none; }
+@keyframes fadeSlide { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: translateY(0); } }
+.log-dot { width: 6px; height: 6px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.log-text { font-size: 12px; color: var(--text); line-height: 1.4; }
+.log-time { font-size: 10px; color: var(--hint); font-family: 'DM Mono', monospace; }
+
+/* ── PANELIST ALERTS ── */
+.alert-card {
+  border-radius: var(--radius-lg); margin-bottom: 0.75rem;
+  overflow: hidden; border: none;
+  animation: pulse-in 0.35s ease;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+@keyframes pulse-in { from { transform: scale(0.96) translateY(6px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+
+.alert-card-header {
+  padding: 1.5rem 1.25rem 1.25rem;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+}
+.alert-card.danger .alert-card-header { background: var(--coral); }
+.alert-card.warning .alert-card-header { background: var(--amber); }
+.alert-card.info .alert-card-header { background: var(--teal); }
+
+.alert-icon { font-size: 36px; margin-bottom: 10px; }
+.alert-headline { font-size: 22px; font-weight: 800; color: white; letter-spacing: -0.5px; margin-bottom: 4px; }
+.alert-sub { font-size: 13px; color: rgba(255,255,255,0.85); line-height: 1.4; }
+
+.alert-card-footer {
+  background: var(--surface); padding: 1rem 1.25rem;
+}
+.alert-meta { font-size: 10px; color: var(--hint); font-family: 'DM Mono', monospace; text-align: center; margin-bottom: 10px; }
+.ack-btn {
+  width: 100%; padding: 12px; border-radius: var(--radius);
+  border: none; background: var(--text);
+  color: white; font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  letter-spacing: 0.2px;
+}
+.ack-btn:hover { opacity: 0.82; }
+.ack-btn:active { transform: scale(0.98); }
+
+.no-alerts { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 13px; }
+.no-alerts-icon { font-size: 32px; margin-bottom: 8px; }
+
+/* ── IDENTITY SELECTOR ── */
+.identity-btn {
+  display: flex; align-items: center; gap: 10px;
+  width: 100%; padding: 10px; border-radius: var(--radius);
+  border: 0.5px solid var(--border); background: transparent;
+  font-family: 'Syne', sans-serif; cursor: pointer;
+  transition: all 0.12s; margin-bottom: 6px;
+}
+.identity-btn:hover { background: var(--surface2); }
+.identity-btn.selected { border: 1.5px solid var(--text); background: var(--surface2); }
+.identity-btn .i-name { font-size: 14px; font-weight: 600; color: var(--text); }
+.identity-btn .i-email { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+/* ── SHARE MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; display: none;
+}
+.modal-overlay.visible { display: flex; }
+.modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  padding: 1.5rem; max-width: 400px; width: 90%;
+}
+.modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+.modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
+.copy-box {
+  display: flex; gap: 8px;
+}
+.copy-box input {
+  flex: 1; padding: 8px 10px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text);
+  outline: none;
+}
+.copy-box button {
+  padding: 8px 16px; border-radius: var(--radius); border: none;
+  background: var(--text); color: var(--surface);
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer;
+}
+.modal-close {
+  margin-top: 1rem; width: 100%; padding: 9px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: transparent;
+  font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; color: var(--text);
+}
+.modal-close:hover { background: var(--surface2); }
+
+.qr-wrap {
+  display: flex; justify-content: center;
+  margin: 1rem 0; padding: 1rem;
+  background: var(--surface2); border-radius: var(--radius);
+}
+#qr-canvas { display: block; }
+.right-col { display: flex; flex-direction: column; gap: 1rem; }
+.share-btn {
+  font-size: 12px; font-weight: 600; padding: 5px 12px;
+  border-radius: 99px; border: 0.5px solid var(--border2);
+  background: transparent; cursor: pointer; color: var(--muted);
+  font-family: 'Syne', sans-serif;
+}
+.share-btn:hover { background: var(--surface2); color: var(--text); }
+
+/* ── THEME TOGGLE ── */
+.theme-toggle {
+  background: transparent; border: 0.5px solid var(--border2);
+  border-radius: 99px; padding: 4px 10px; font-size: 14px;
+  cursor: pointer; line-height: 1; flex-shrink: 0;
+  transition: background 0.15s;
+}
+.theme-toggle:hover { background: var(--surface2); }
+
+.lobby-theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  background: var(--surface); border: 0.5px solid var(--border2);
+  border-radius: 99px; padding: 6px 12px; font-size: 14px;
+  cursor: pointer; line-height: 1;
+  transition: background 0.15s;
+}
+.lobby-theme-toggle:hover { background: var(--surface2); }
+  .main.mod-layout { grid-template-columns: 1fr; }
+  .right-col { flex-direction: column; }
+  .lobby-cards { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <button class="lobby-theme-toggle" id="lobby-theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">☀️</button>
+  <div class="lobby-logo">
+    <h1>Buzzr</h1>
+    <p>SILENT ALERTS FOR PANEL MODERATORS</p>
+  </div>
+  <div class="lobby-cards">
+    <div class="lobby-card" onclick="startModerator()">
+      <div class="card-icon">🎙</div>
+      <h2>I'm the Moderator</h2>
+      <p>Create a session, add panelists, and send alerts in real time.</p>
+    </div>
+    <div class="lobby-card" onclick="showJoinForm()">
+      <div class="card-icon">📱</div>
+      <h2>I'm a Panelist</h2>
+      <p>Join a session to receive buzzes and time alerts from the moderator.</p>
+    </div>
+    <div class="divider">
+      <hr /><span>or join with a code</span><hr />
+    </div>
+    <div class="join-row" id="join-row">
+      <input type="text" id="session-code-input" placeholder="ENTER CODE" maxlength="8" />
+      <button onclick="joinAsPanel()">Join →</button>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">Buzzr</div>
+    <div class="session-badge" id="session-badge" onclick="showShare()" title="Click to share">—</div>
+    <button class="share-btn" onclick="showShare()">Share ↗</button>
+    <span class="role-pill moderator" id="role-pill">Moderator</span>
+    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode" aria-label="Toggle dark mode">☀️</button>
+    <div class="ws-dot" id="ws-dot"></div>
+  </div>
+
+  <!-- MODERATOR VIEW -->
+  <div class="main mod-layout" id="mod-main">
+
+    <!-- Panelists card -->
+    <div class="card" style="grid-column:1; grid-row:1/3;">
+      <div class="card-title">Panelists</div>
+      <div id="panelist-list"></div>
+      <div class="add-form">
+        <input id="new-name" type="text" placeholder="Name" />
+        <input id="new-email" type="text" placeholder="email / ID (optional)" />
+        <button onclick="addPanelist()">+ Add</button>
+      </div>
+    </div>
+
+    <!-- Right col -->
+    <div class="right-col" style="grid-column:2; grid-row:1/4;">
+
+      <!-- Timer -->
+      <div class="card">
+        <div class="card-title">Session Timer</div>
+        <div class="timer-wrap">
+          <svg width="130" height="130" viewBox="0 0 130 130">
+            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="8" id="ring-track"/>
+            <circle cx="65" cy="65" r="54" fill="none" stroke="var(--text)" stroke-width="8"
+              stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0"
+              id="ring" transform="rotate(-90 65 65)" style="transition:stroke-dashoffset 0.6s,stroke 0.3s;"/>
+            <text x="65" y="61" text-anchor="middle" font-family="DM Mono,monospace" font-size="22" font-weight="500" fill="var(--text)" id="timer-disp">05:00</text>
+            <text x="65" y="78" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="var(--hint)" id="timer-status">ready</text>
+          </svg>
+        </div>
+        <div class="timer-controls" style="margin-bottom:8px;">
+          <button onclick="ws_setTimer(5*60)">5m</button>
+          <button onclick="ws_setTimer(10*60)">10m</button>
+          <button onclick="ws_setTimer(15*60)">15m</button>
+          <button onclick="ws_setTimer(20*60)">20m</button>
+        </div>
+        <div class="timer-controls">
+          <button class="t-btn primary" id="play-btn" onclick="ws_toggleTimer()">Start</button>
+          <button class="t-btn danger" onclick="ws_resetTimer()">Reset</button>
+        </div>
+      </div>
+
+      <!-- Quick Buzz -->
+      <div class="card">
+        <div class="card-title">Quick Buzz</div>
+        <div class="preset-grid">
+          <div class="preset-btn active" onclick="selectPreset(this,'5 min left','⏰ 5 minutes remaining.','warning')">
+            <div class="preset-label">5 min left</div>
+            <div class="preset-sub">gentle reminder</div>
+          </div>
+          <div class="preset-btn" onclick="selectPreset(this,&quot;Time's up!&quot;,'🔴 Your time has ended.','danger')">
+            <div class="preset-label">Time's up</div>
+            <div class="preset-sub">hard stop</div>
+          </div>
+          <div class="preset-btn" onclick="selectPreset(this,'Wrap up now','Please begin concluding your remarks.','warning')">
+            <div class="preset-label">Wrap up</div>
+            <div class="preset-sub">finish soon</div>
+          </div>
+          <div class="preset-btn" onclick="selectPreset(this,'Message','','info',true)">
+            <div class="preset-label">Custom</div>
+            <div class="preset-sub">type anything</div>
+          </div>
+        </div>
+        <input type="text" id="custom-input" placeholder="Type your message…" />
+        <button class="buzz-all-btn" id="buzz-all-btn" onclick="ws_buzzAll()">⚡ Buzz everyone</button>
+      </div>
+    </div>
+
+    <!-- Activity log - spans bottom -->
+    <div class="card" style="grid-column:1; grid-row:3;">
+      <div class="card-title">Activity log</div>
+      <div class="log-list" id="log-list">
+        <div style="color:var(--hint);font-size:12px;padding:1rem 0;text-align:center;">No alerts sent yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANELIST VIEW -->
+  <div class="main pan-layout" id="pan-main" style="display:none;">
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Your alerts</div>
+      <div id="alert-cards">
+        <div class="no-alerts">
+          <div class="no-alerts-icon">✅</div>
+          No alerts yet — you're all good!
+        </div>
+      </div>
+    </div>
+
+    <!-- Timer view for panelist -->
+    <div class="card" style="margin-bottom:1rem;">
+      <div class="card-title">Session timer</div>
+      <div class="timer-wrap">
+        <svg width="130" height="130" viewBox="0 0 130 130">
+          <circle cx="65" cy="65" r="54" fill="none" stroke="var(--surface2)" stroke-width="8"/>
+          <circle cx="65" cy="65" r="54" fill="none" stroke="var(--text)" stroke-width="8"
+            stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0"
+            id="ring-pan" transform="rotate(-90 65 65)" style="transition:stroke-dashoffset 0.6s,stroke 0.3s;"/>
+          <text x="65" y="61" text-anchor="middle" font-family="DM Mono,monospace" font-size="22" font-weight="500" fill="var(--text)" id="timer-disp-pan">05:00</text>
+          <text x="65" y="78" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="var(--hint)" id="timer-status-pan">waiting</text>
+        </svg>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Your identity</div>
+      <div id="identity-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SHARE MODAL -->
+<div class="modal-overlay" id="share-modal" onclick="hideShare(event)">
+  <div class="modal">
+    <h3>Share this session</h3>
+    <p>Send the code or link to panelists so they can join on their phones.</p>
+    <div class="qr-wrap">
+      <canvas id="qr-canvas" width="160" height="160"></canvas>
+    </div>
+    <div style="margin-bottom:1rem;">
+      <div class="card-title" style="margin-bottom:6px;">Session code</div>
+      <div class="copy-box">
+        <input type="text" id="share-code" readonly />
+        <button onclick="copyCode()">Copy</button>
+      </div>
+    </div>
+    <div>
+      <div class="card-title" style="margin-bottom:6px;">Direct link</div>
+      <div class="copy-box">
+        <input type="text" id="share-link" readonly />
+        <button onclick="copyLink()">Copy</button>
+      </div>
+    </div>
+    <button class="modal-close" onclick="hideShare()">Close</button>
+  </div>
+</div>
+
+<script>
+// ── Theme ──
+(function() {
+  const saved = localStorage.getItem('buzzr-theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const isDark = saved ? saved === 'dark' : prefersDark;
+  if (isDark) document.documentElement.setAttribute('data-theme', 'dark');
+})();
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('buzzr-theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('buzzr-theme', 'dark');
+  }
+  updateThemeButtons();
+  if (document.getElementById('share-modal').classList.contains('visible')) generateQR();
+}
+
+function updateThemeButtons() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  const icon = isDark ? '🌙' : '☀️';
+  ['theme-toggle','lobby-theme-toggle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = icon;
+  });
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  updateThemeButtons();
+});
+let ws = null;
+let sessionId = null;
+let myRole = null;
+let myPanelistId = null;
+let state = { panelists: [], alerts: {}, timer: { total: 300, left: 300, running: false }, log: [] };
+let selPreset = { label: '5 min left', msg: '⏰ 5 minutes remaining.', level: 'warning', custom: false };
+
+const COLORS = {
+  teal:   { bg:'#E1F5EE', text:'#0F6E56', mid:'#1D9E75' },
+  purple: { bg:'#EEEDFE', text:'#3C3489', mid:'#534AB7' },
+  coral:  { bg:'#FAECE7', text:'#712B13', mid:'#D85A30' },
+  blue:   { bg:'#E6F1FB', text:'#0C447C', mid:'#378ADD' },
+  amber:  { bg:'#FAEEDA', text:'#633806', mid:'#BA7517' },
+};
+const COLOR_KEYS = Object.keys(COLORS);
+
+function initials(name) {
+  return name.trim().split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase();
+}
+
+// ── Lobby ──
+function startModerator() {
+  fetch('/api/session', { method: 'POST' })
+    .then(r => r.json())
+    .then(d => connectWS(d.sessionId, 'moderator'));
+}
+
+function showJoinForm() {
+  document.getElementById('session-code-input').focus();
+}
+
+function joinAsPanel() {
+  const code = document.getElementById('session-code-input').value.trim().toUpperCase();
+  if (!code) return;
+  connectWS(code, 'panelist');
+}
+
+// URL param auto-join
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  const code = params.get('session');
+  if (code) {
+    document.getElementById('session-code-input').value = code.toUpperCase();
+    connectWS(code.toUpperCase(), 'panelist');
+  }
+});
+
+// ── WebSocket ──
+function connectWS(sid, role, pId = null) {
+  sessionId = sid;
+  myRole = role;
+  myPanelistId = pId;
+
+  const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${protocol}//${location.host}`);
+
+  ws.onopen = () => {
+    document.getElementById('ws-dot').className = 'ws-dot connected';
+    ws.send(JSON.stringify({ type: 'JOIN', sessionId, role, panelistId: pId }));
+  };
+
+  ws.onclose = () => {
+    document.getElementById('ws-dot').className = 'ws-dot error';
+    setTimeout(() => connectWS(sessionId, myRole, myPanelistId), 2000);
+  };
+
+  ws.onerror = () => {
+    document.getElementById('ws-dot').className = 'ws-dot error';
+  };
+
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    handleMsg(msg);
+  };
+}
+
+function handleMsg(msg) {
+  switch (msg.type) {
+    case 'JOINED':
+    case 'STATE':
+      state.panelists = msg.panelists || [];
+      state.alerts = msg.alerts || {};
+      state.timer = msg.timer || state.timer;
+      state.log = msg.log || [];
+      if (msg.sessionId) sessionId = msg.sessionId;
+      showApp();
+      render();
+      break;
+    case 'TIMER':
+      state.timer = msg.timer;
+      renderTimer();
+      break;
+    case 'ALERT':
+      if (!state.alerts[msg.panelistId]) state.alerts[msg.panelistId] = [];
+      state.alerts[msg.panelistId].unshift(msg.alert);
+      if (myRole === 'panelist' && msg.panelistId === myPanelistId) {
+        renderAlerts();
+        vibrateIfSupported();
+        playBeep(msg.alert.level);
+      } else if (myRole === 'moderator') {
+        renderPanelistList();
+      }
+      break;
+    case 'LOG_UPDATE':
+      state.log = msg.log || [];
+      state.alerts = msg.alerts || state.alerts;
+      renderLog();
+      renderPanelistList();
+      break;
+    case 'ALERTS_UPDATE':
+      state.alerts[msg.panelistId] = msg.alerts;
+      renderAlerts();
+      break;
+  }
+}
+
+function showApp() {
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('session-badge').textContent = sessionId;
+  document.getElementById('share-code').value = sessionId;
+  document.getElementById('share-link').value = `${location.origin}?session=${sessionId}`;
+  const pill = document.getElementById('role-pill');
+  pill.textContent = myRole === 'moderator' ? 'Moderator' : 'Panelist';
+  pill.className = `role-pill ${myRole}`;
+  document.getElementById('mod-main').style.display = myRole === 'moderator' ? 'grid' : 'none';
+  document.getElementById('pan-main').style.display = myRole === 'panelist' ? 'grid' : 'none';
+}
+
+// ── Render ──
+function render() {
+  renderPanelistList();
+  renderTimer();
+  renderLog();
+  if (myRole === 'panelist') { renderAlerts(); renderIdentity(); }
+}
+
+function renderPanelistList() {
+  const el = document.getElementById('panelist-list');
+  if (!state.panelists.length) {
+    el.innerHTML = '<div style="color:var(--hint);font-size:12px;padding:0.5rem 0;">No panelists yet. Add one below.</div>';
+    return;
+  }
+  el.innerHTML = state.panelists.map((p, i) => {
+    const c = COLORS[p.color] || COLORS.teal;
+    const alertCount = (state.alerts[p.id] || []).length;
+    const btnCls = alertCount > 0 ? 'has-alerts' : '';
+    return `<div class="p-row">
+      <div class="avatar" style="background:${c.bg};color:${c.text}">${initials(p.name)}</div>
+      <div class="p-info">
+        <div class="p-name">${p.name}</div>
+        <div class="p-email">${p.email || 'no email'}</div>
+      </div>
+      <div class="status-dot ${p.online ? 'on' : ''}" title="${p.online ? 'Online' : 'Offline'}"></div>
+      <button class="buzz-btn ${btnCls}" onclick="ws_buzzOne('${p.id}')">
+        ${alertCount > 0 ? '⚡ ' + alertCount + ' sent' : '⚡ Buzz'}
+      </button>
+      <button class="buzz-btn remove-btn" onclick="ws_remove('${p.id}')" title="Remove">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderTimer() {
+  const t = state.timer;
+  const fmt = (s) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;
+  const frac = t.total > 0 ? t.left / t.total : 0;
+  const offset = Math.round(339.3 * (1 - frac));
+  const strokeColor = t.left === 0 ? 'var(--coral)' : t.left < 60 ? 'var(--amber)' : 'var(--text)';
+  const statusText = t.running ? 'running' : t.left === 0 ? 'ended' : 'paused';
+
+  ['ring','ring-pan'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.setAttribute('stroke-dashoffset', offset); el.style.stroke = strokeColor; }
+  });
+  ['timer-disp','timer-disp-pan'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = fmt(t.left); });
+  ['timer-status','timer-status-pan'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = statusText; });
+
+  const playBtn = document.getElementById('play-btn');
+  if (playBtn) playBtn.textContent = t.running ? 'Pause' : t.left === 0 ? 'Done' : 'Start';
+}
+
+function renderLog() {
+  const el = document.getElementById('log-list');
+  if (!el) return;
+  if (!state.log.length) {
+    el.innerHTML = '<div style="color:var(--hint);font-size:12px;padding:1rem 0;text-align:center;">No alerts sent yet.</div>';
+    return;
+  }
+  el.innerHTML = state.log.map(a => {
+    const col = a.level === 'danger' ? 'var(--coral)' : a.level === 'warning' ? 'var(--amber)' : 'var(--teal)';
+    return `<div class="log-item">
+      <div class="log-dot" style="background:${col}"></div>
+      <div>
+        <div class="log-text"><strong>${a.who}</strong> — ${a.label}</div>
+        <div class="log-time">${a.time}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAlerts() {
+  const el = document.getElementById('alert-cards');
+  if (!el) return;
+  const alerts = state.alerts[myPanelistId] || [];
+  if (!alerts.length) {
+    el.innerHTML = '<div class="no-alerts"><div class="no-alerts-icon">✅</div>No alerts yet — you\'re all good!</div>';
+    return;
+  }
+  el.innerHTML = alerts.map(a => {
+    const icon = a.level === 'danger' ? '🔴' : a.level === 'warning' ? '⏰' : '📢';
+    return `<div class="alert-card ${a.level}">
+      <div class="alert-card-header">
+        <div class="alert-icon">${icon}</div>
+        <div class="alert-headline">${a.label}</div>
+        <div class="alert-sub">${a.msg}</div>
+      </div>
+      <div class="alert-card-footer">
+        <div class="alert-meta">${a.time} · from moderator${a.auto ? ' · auto' : ''}</div>
+        <button class="ack-btn" onclick="ws_ack('${a.id}')">Got it ✓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderIdentity() {
+  const el = document.getElementById('identity-list');
+  if (!el) return;
+  if (!state.panelists.length) {
+    el.innerHTML = '<div style="color:var(--hint);font-size:12px;">Waiting for moderator to add panelists…</div>';
+    return;
+  }
+  el.innerHTML = state.panelists.map(p => {
+    const c = COLORS[p.color] || COLORS.teal;
+    const selected = myPanelistId === p.id;
+    return `<button class="identity-btn ${selected ? 'selected' : ''}" onclick="selectIdentity('${p.id}')">
+      <div class="avatar" style="background:${c.bg};color:${c.text};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(p.name)}</div>
+      <div style="text-align:left;">
+        <div class="i-name">${p.name}</div>
+        <div class="i-email">${p.email || 'tap to select'}</div>
+      </div>
+      ${selected ? '<span style="margin-left:auto;font-size:12px;color:var(--teal);">✓ You</span>' : ''}
+    </button>`;
+  }).join('');
+}
+
+// ── WS Actions ──
+function ws_send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+function addPanelist() {
+  const name = document.getElementById('new-name').value.trim();
+  const email = document.getElementById('new-email').value.trim();
+  if (!name) return;
+  const color = COLOR_KEYS[state.panelists.length % COLOR_KEYS.length];
+  ws_send({ type: 'ADD_PANELIST', name, email, color });
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-email').value = '';
+}
+
+function ws_remove(id) { ws_send({ type: 'REMOVE_PANELIST', panelistId: id }); }
+
+function selectPreset(el, label, msg, level, custom = false) {
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selPreset = { label, msg, level, custom };
+  document.getElementById('custom-input').style.display = custom ? 'block' : 'none';
+}
+
+function getBuzzPayload() {
+  let msg = selPreset.msg;
+  let label = selPreset.label;
+  if (selPreset.custom) {
+    const v = document.getElementById('custom-input').value.trim();
+    msg = v || '(message from moderator)';
+    label = 'Message';
+  }
+  return { label, msg, level: selPreset.level };
+}
+
+function ws_buzzOne(panelistId) {
+  const p = getBuzzPayload();
+  ws_send({ type: 'BUZZ_ONE', panelistId, ...p });
+}
+
+function ws_buzzAll() {
+  const p = getBuzzPayload();
+  ws_send({ type: 'BUZZ_ALL', ...p });
+  const btn = document.getElementById('buzz-all-btn');
+  btn.textContent = '✓ Buzzed!';
+  btn.classList.add('fired');
+  setTimeout(() => { btn.textContent = '⚡ Buzz everyone'; btn.classList.remove('fired'); }, 2000);
+}
+
+function ws_setTimer(secs) { ws_send({ type: 'TIMER_SET', secs }); }
+function ws_toggleTimer() { ws_send({ type: 'TIMER_TOGGLE' }); }
+function ws_resetTimer() { ws_send({ type: 'TIMER_RESET' }); }
+
+function ws_ack(alertId) {
+  ws_send({ type: 'ACK_ALERT', panelistId: myPanelistId, alertId });
+}
+
+function selectIdentity(id) {
+  myPanelistId = id;
+  // Reconnect with new identity
+  ws.close();
+  connectWS(sessionId, 'panelist', id);
+}
+
+// ── Share Modal ──
+function showShare() {
+  document.getElementById('share-modal').classList.add('visible');
+  generateQR();
+}
+function hideShare(e) {
+  if (!e || e.target === document.getElementById('share-modal'))
+    document.getElementById('share-modal').classList.remove('visible');
+}
+function copyCode() {
+  navigator.clipboard?.writeText(sessionId) || (document.getElementById('share-code').select(), document.execCommand('copy'));
+}
+function copyLink() {
+  const link = `${location.origin}?session=${sessionId}`;
+  navigator.clipboard?.writeText(link) || (document.getElementById('share-link').select(), document.execCommand('copy'));
+}
+
+function generateQR() {
+  const canvas = document.getElementById('qr-canvas');
+  if (!canvas) return;
+  const url = `${location.origin}?session=${sessionId}`;
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (window.QRCode) {
+    QRCode.toCanvas(canvas, url, {
+      width: 160, margin: 1,
+      color: { dark: isDark ? '#f0ede8' : '#1a1917', light: isDark ? '#1c1c1a' : '#f0ede8' }
+    }, () => {});
+  }
+}
+
+// ── Feedback ──
+function vibrateIfSupported() {
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+function playBeep(level) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const freqs = { danger: [880, 660], warning: [660, 550], info: [550] };
+    const times = freqs[level] || [550];
+    times.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.25);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.25 + 0.2);
+      osc.start(ctx.currentTime + i * 0.25);
+      osc.stop(ctx.currentTime + i * 0.25 + 0.25);
+    });
+  } catch {}
+}
+
+// Enter key shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    if (document.activeElement.id === 'new-name' || document.activeElement.id === 'new-email') addPanelist();
+    if (document.activeElement.id === 'session-code-input') joinAsPanel();
+  }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</body>
+</html>
