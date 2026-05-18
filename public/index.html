@@ -229,6 +229,39 @@ body {
 }
 .add-form button:hover { background: var(--surface2); }
 
+/* ── CUSTOM TIME INPUT ── */
+.time-input-row {
+  display: flex; align-items: flex-end; gap: 6px;
+  margin-bottom: 10px;
+}
+.time-field {
+  display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1;
+}
+.time-field input {
+  width: 100%; padding: 7px 4px; text-align: center;
+  border-radius: var(--radius); border: 0.5px solid var(--border2);
+  background: var(--surface2); font-family: 'DM Mono', monospace;
+  font-size: 16px; font-weight: 500; color: var(--text);
+  outline: none; -moz-appearance: textfield;
+}
+.time-field input::-webkit-inner-spin-button,
+.time-field input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.time-field input:focus { border-color: var(--text); background: var(--surface); }
+.time-field label { font-size: 9px; color: var(--hint); font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
+.time-sep { font-size: 18px; color: var(--hint); padding-bottom: 18px; font-family: 'DM Mono', monospace; }
+.set-btn { flex: 0 0 auto; padding: 7px 14px !important; align-self: flex-start; margin-top: 0; }
+
+.quick-picks {
+  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;
+}
+.quick-picks button {
+  padding: 5px 10px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: transparent;
+  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
+  color: var(--muted); cursor: pointer; transition: all 0.12s;
+}
+.quick-picks button:hover { background: var(--surface2); color: var(--text); border-color: var(--text); }
+
 /* ── TIMER ── */
 .timer-wrap { display: flex; align-items: center; justify-content: center; padding: 0.75rem 0; }
 .timer-controls { display: flex; gap: 6px; }
@@ -351,9 +384,7 @@ body {
 }
 .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
-.copy-box {
-  display: flex; gap: 8px;
-}
+.copy-box { display: flex; gap: 8px; }
 .copy-box input {
   flex: 1; padding: 8px 10px; border-radius: var(--radius);
   border: 0.5px solid var(--border2); background: var(--surface2);
@@ -378,6 +409,7 @@ body {
   background: var(--surface2); border-radius: var(--radius);
 }
 #qr-canvas { display: block; }
+
 .right-col { display: flex; flex-direction: column; gap: 1rem; }
 .share-btn {
   font-size: 12px; font-weight: 600; padding: 5px 12px;
@@ -404,6 +436,8 @@ body {
   transition: background 0.15s;
 }
 .lobby-theme-toggle:hover { background: var(--surface2); }
+
+@media (max-width: 640px) {
   .main.mod-layout { grid-template-columns: 1fr; }
   .right-col { flex-direction: column; }
   .lobby-cards { grid-template-columns: 1fr; }
@@ -467,38 +501,7 @@ body {
 
     <!-- Right col -->
     <div class="right-col" style="grid-column:2; grid-row:1/4;">
-/* ── CUSTOM TIME INPUT ── */
-.time-input-row {
-  display: flex; align-items: flex-end; gap: 6px;
-  margin-bottom: 10px;
-}
-.time-field {
-  display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1;
-}
-.time-field input {
-  width: 100%; padding: 7px 4px; text-align: center;
-  border-radius: var(--radius); border: 0.5px solid var(--border2);
-  background: var(--surface2); font-family: 'DM Mono', monospace;
-  font-size: 16px; font-weight: 500; color: var(--text);
-  outline: none; -moz-appearance: textfield;
-}
-.time-field input::-webkit-inner-spin-button,
-.time-field input::-webkit-outer-spin-button { -webkit-appearance: none; }
-.time-field input:focus { border-color: var(--text); background: var(--surface); }
-.time-field label { font-size: 9px; color: var(--hint); font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
-.time-sep { font-size: 18px; color: var(--hint); padding-bottom: 18px; font-family: 'DM Mono', monospace; }
-.set-btn { flex: 0 0 auto; padding: 7px 14px !important; align-self: flex-start; margin-top: 0; }
 
-.quick-picks {
-  display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px;
-}
-.quick-picks button {
-  padding: 5px 10px; border-radius: var(--radius);
-  border: 0.5px solid var(--border2); background: transparent;
-  font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 500;
-  color: var(--muted); cursor: pointer; transition: all 0.12s;
-}
-.quick-picks button:hover { background: var(--surface2); color: var(--text); border-color: var(--text); }
       <!-- Timer -->
       <div class="card">
         <div class="card-title">Session Timer</div>
@@ -513,36 +516,36 @@ body {
           </svg>
         </div>
         <div class="time-input-row">
-  <div class="time-field">
-    <input type="number" id="t-hrs" min="0" max="23" value="0" placeholder="0" oninput="clampTimeInput(this,23)" />
-    <label>hrs</label>
-  </div>
-  <span class="time-sep">:</span>
-  <div class="time-field">
-    <input type="number" id="t-min" min="0" max="59" value="5" placeholder="5" oninput="clampTimeInput(this,59)" />
-    <label>min</label>
-  </div>
-  <span class="time-sep">:</span>
-  <div class="time-field">
-    <input type="number" id="t-sec" min="0" max="59" value="0" placeholder="0" oninput="clampTimeInput(this,59)" />
-    <label>sec</label>
-  </div>
-  <button class="t-btn set-btn" onclick="ws_setCustomTimer()">Set</button>
-</div>
-<div class="quick-picks">
-  <button onclick="applyQuickPick(5)">5m</button>
-  <button onclick="applyQuickPick(10)">10m</button>
-  <button onclick="applyQuickPick(15)">15m</button>
-  <button onclick="applyQuickPick(20)">20m</button>
-  <button onclick="applyQuickPick(30)">30m</button>
-  <button onclick="applyQuickPick(45)">45m</button>
-  <button onclick="applyQuickPick(60)">1h</button>
-  <button onclick="applyQuickPick(90)">1h30</button>
-</div>
-<div class="timer-controls">
-  <button class="t-btn primary" id="play-btn" onclick="ws_toggleTimer()">Start</button>
-  <button class="t-btn danger" onclick="ws_resetTimer()">Reset</button>
-</div>
+          <div class="time-field">
+            <input type="number" id="t-hrs" min="0" max="23" value="0" placeholder="0" oninput="clampTimeInput(this,23)" />
+            <label>hrs</label>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="time-field">
+            <input type="number" id="t-min" min="0" max="59" value="5" placeholder="5" oninput="clampTimeInput(this,59)" />
+            <label>min</label>
+          </div>
+          <span class="time-sep">:</span>
+          <div class="time-field">
+            <input type="number" id="t-sec" min="0" max="59" value="0" placeholder="0" oninput="clampTimeInput(this,59)" />
+            <label>sec</label>
+          </div>
+          <button class="t-btn set-btn" onclick="ws_setCustomTimer()">Set</button>
+        </div>
+        <div class="quick-picks">
+          <button onclick="applyQuickPick(5)">5m</button>
+          <button onclick="applyQuickPick(10)">10m</button>
+          <button onclick="applyQuickPick(15)">15m</button>
+          <button onclick="applyQuickPick(20)">20m</button>
+          <button onclick="applyQuickPick(30)">30m</button>
+          <button onclick="applyQuickPick(45)">45m</button>
+          <button onclick="applyQuickPick(60)">1h</button>
+          <button onclick="applyQuickPick(90)">1h30</button>
+        </div>
+        <div class="timer-controls">
+          <button class="t-btn primary" id="play-btn" onclick="ws_toggleTimer()">Start</button>
+          <button class="t-btn danger" onclick="ws_resetTimer()">Reset</button>
+        </div>
       </div>
 
       <!-- Quick Buzz -->
@@ -571,7 +574,7 @@ body {
       </div>
     </div>
 
-    <!-- Activity log - spans bottom -->
+    <!-- Activity log -->
     <div class="card" style="grid-column:1; grid-row:3;">
       <div class="card-title">Activity log</div>
       <div class="log-list" id="log-list">
@@ -674,6 +677,8 @@ function updateThemeButtons() {
 window.addEventListener('DOMContentLoaded', () => {
   updateThemeButtons();
 });
+
+// ── State ──
 let ws = null;
 let sessionId = null;
 let myRole = null;
@@ -991,6 +996,7 @@ function clampTimeInput(el, max) {
   if (isNaN(v) || v < 0) el.value = 0;
   else if (v > max) el.value = max;
 }
+
 function ws_toggleTimer() { ws_send({ type: 'TIMER_TOGGLE' }); }
 function ws_resetTimer() { ws_send({ type: 'TIMER_RESET' }); }
 
@@ -1000,7 +1006,6 @@ function ws_ack(alertId) {
 
 function selectIdentity(id) {
   myPanelistId = id;
-  // Reconnect with new identity
   ws.close();
   connectWS(sessionId, 'panelist', id);
 }
