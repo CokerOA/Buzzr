@@ -381,6 +381,7 @@ body {
 .modal {
   background: var(--surface); border-radius: var(--radius-lg);
   padding: 1.5rem; max-width: 400px; width: 90%;
+  max-height: 90vh; overflow-y: auto;
 }
 .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
 .modal p { font-size: 13px; color: var(--muted); margin-bottom: 1rem; }
@@ -395,13 +396,31 @@ body {
   padding: 8px 16px; border-radius: var(--radius); border: none;
   background: var(--text); color: var(--surface);
   font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; cursor: pointer;
+  transition: background 0.2s, color 0.2s; white-space: nowrap; min-width: 72px;
 }
+.copy-box button.copied { background: var(--teal); }
 .modal-close {
   margin-top: 1rem; width: 100%; padding: 9px; border-radius: var(--radius);
   border: 0.5px solid var(--border2); background: transparent;
   font-family: 'Syne', sans-serif; font-size: 13px; cursor: pointer; color: var(--text);
 }
 .modal-close:hover { background: var(--surface2); }
+
+/* Email invite row */
+.invite-row { display: flex; gap: 8px; margin-top: 1rem; }
+.invite-row input {
+  flex: 1; padding: 8px 10px; border-radius: var(--radius);
+  border: 0.5px solid var(--border2); background: var(--surface2);
+  font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); outline: none;
+}
+.invite-row input:focus { border-color: var(--text); background: var(--surface); }
+.invite-row button {
+  padding: 8px 16px; border-radius: var(--radius); border: none;
+  background: var(--teal); color: white;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.invite-row button:hover { opacity: 0.85; }
 
 .qr-wrap {
   display: flex; justify-content: center;
@@ -418,6 +437,50 @@ body {
   font-family: 'Syne', sans-serif;
 }
 .share-btn:hover { background: var(--surface2); color: var(--text); }
+
+/* ── IDENTITY PICKER (full screen for panelists before selecting name) ── */
+#identity-picker {
+  display: none; position: fixed; inset: 0; z-index: 50;
+  background: var(--bg); flex-direction: column;
+  align-items: center; justify-content: center; padding: 2rem;
+}
+#identity-picker.visible { display: flex; }
+.picker-logo { font-size: 24px; font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem; }
+.picker-sub { font-size: 12px; color: var(--muted); font-family: 'DM Mono', monospace; margin-bottom: 2rem; letter-spacing: 0.5px; }
+.picker-list { width: 100%; max-width: 400px; }
+.picker-card {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 14px 16px; border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border); background: var(--surface);
+  font-family: 'Syne', sans-serif; cursor: pointer;
+  transition: all 0.12s; margin-bottom: 10px; text-align: left;
+}
+.picker-card:hover { border-color: var(--text); transform: translateY(-1px); }
+.picker-card .p-name { font-size: 15px; font-weight: 700; }
+.picker-card .p-email { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+.picker-waiting { color: var(--muted); font-size: 13px; text-align: center; padding: 2rem; }
+
+/* ── ALERT HISTORY ── */
+.history-toggle {
+  width: 100%; padding: 10px 0; border: none; background: transparent;
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted);
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  border-top: 0.5px solid var(--border); margin-top: 0.5rem;
+  letter-spacing: 0.5px;
+}
+.history-toggle:hover { color: var(--text); }
+.history-toggle .arrow { transition: transform 0.2s; }
+.history-toggle.open .arrow { transform: rotate(180deg); }
+.history-list { display: none; }
+.history-list.open { display: block; }
+.alert-card.acknowledged {
+  opacity: 0.55; box-shadow: none;
+}
+.alert-card.acknowledged .alert-card-header { filter: grayscale(0.4); }
+.alert-card.acknowledged .ack-label {
+  font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace;
+  text-align: center; padding: 8px;
+}
 
 /* ── THEME TOGGLE ── */
 .theme-toggle {
@@ -436,8 +499,6 @@ body {
   transition: background 0.15s;
 }
 .lobby-theme-toggle:hover { background: var(--surface2); }
-
-@media (max-width: 640px) {
   .main.mod-layout { grid-template-columns: 1fr; }
   .right-col { flex-direction: column; }
   .lobby-cards { grid-template-columns: 1fr; }
@@ -515,6 +576,7 @@ body {
             <text x="65" y="78" text-anchor="middle" font-family="DM Mono,monospace" font-size="10" fill="var(--hint)" id="timer-status">ready</text>
           </svg>
         </div>
+        <!-- Custom time input -->
         <div class="time-input-row">
           <div class="time-field">
             <input type="number" id="t-hrs" min="0" max="23" value="0" placeholder="0" oninput="clampTimeInput(this,23)" />
@@ -532,6 +594,7 @@ body {
           </div>
           <button class="t-btn set-btn" onclick="ws_setCustomTimer()">Set</button>
         </div>
+        <!-- Quick picks -->
         <div class="quick-picks">
           <button onclick="applyQuickPick(5)">5m</button>
           <button onclick="applyQuickPick(10)">10m</button>
@@ -574,7 +637,7 @@ body {
       </div>
     </div>
 
-    <!-- Activity log -->
+    <!-- Activity log - spans bottom -->
     <div class="card" style="grid-column:1; grid-row:3;">
       <div class="card-title">Activity log</div>
       <div class="log-list" id="log-list">
@@ -586,13 +649,19 @@ body {
   <!-- PANELIST VIEW -->
   <div class="main pan-layout" id="pan-main" style="display:none;">
     <div class="card" style="margin-bottom:1rem;">
-      <div class="card-title">Your alerts</div>
+      <div class="card-title" id="pan-name-label">Your alerts</div>
       <div id="alert-cards">
         <div class="no-alerts">
           <div class="no-alerts-icon">✅</div>
           No alerts yet — you're all good!
         </div>
       </div>
+      <!-- Alert history -->
+      <button class="history-toggle" id="history-toggle" onclick="toggleHistory()" style="display:none;">
+        <span class="arrow">▼</span>
+        <span id="history-label">Alert history (0)</span>
+      </button>
+      <div class="history-list" id="history-list"></div>
     </div>
 
     <!-- Timer view for panelist -->
@@ -609,11 +678,6 @@ body {
         </svg>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-title">Your identity</div>
-      <div id="identity-list"></div>
-    </div>
   </div>
 </div>
 
@@ -621,7 +685,7 @@ body {
 <div class="modal-overlay" id="share-modal" onclick="hideShare(event)">
   <div class="modal">
     <h3>Share this session</h3>
-    <p>Send the code or link to panelists so they can join on their phones.</p>
+    <p>Send the code, link, or a direct email invite to your panelists.</p>
     <div class="qr-wrap">
       <canvas id="qr-canvas" width="160" height="160"></canvas>
     </div>
@@ -629,17 +693,33 @@ body {
       <div class="card-title" style="margin-bottom:6px;">Session code</div>
       <div class="copy-box">
         <input type="text" id="share-code" readonly />
-        <button onclick="copyCode()">Copy</button>
+        <button id="copy-code-btn" onclick="copyCode()">Copy</button>
       </div>
     </div>
-    <div>
+    <div style="margin-bottom:1rem;">
       <div class="card-title" style="margin-bottom:6px;">Direct link</div>
       <div class="copy-box">
         <input type="text" id="share-link" readonly />
-        <button onclick="copyLink()">Copy</button>
+        <button id="copy-link-btn" onclick="copyLink()">Copy</button>
+      </div>
+    </div>
+    <div>
+      <div class="card-title" style="margin-bottom:6px;">Email invite</div>
+      <div class="invite-row">
+        <input type="email" id="invite-email" placeholder="panelist@email.com" />
+        <button onclick="sendEmailInvite()">Send invite ✉️</button>
       </div>
     </div>
     <button class="modal-close" onclick="hideShare()">Close</button>
+  </div>
+</div>
+
+<!-- IDENTITY PICKER -->
+<div id="identity-picker">
+  <div class="picker-logo">Buzzr</div>
+  <div class="picker-sub">WHO ARE YOU?</div>
+  <div class="picker-list" id="picker-list">
+    <div class="picker-waiting">Waiting for moderator to add panelists…</div>
   </div>
 </div>
 
@@ -677,13 +757,12 @@ function updateThemeButtons() {
 window.addEventListener('DOMContentLoaded', () => {
   updateThemeButtons();
 });
-
-// ── State ──
 let ws = null;
 let sessionId = null;
 let myRole = null;
 let myPanelistId = null;
 let state = { panelists: [], alerts: {}, timer: { total: 300, left: 300, running: false }, log: [] };
+let alertHistory = []; // acknowledged alerts kept client-side
 let selPreset = { label: '5 min left', msg: '⏰ 5 minutes remaining.', level: 'warning', custom: false };
 
 const COLORS = {
@@ -806,6 +885,35 @@ function showApp() {
   pill.className = `role-pill ${myRole}`;
   document.getElementById('mod-main').style.display = myRole === 'moderator' ? 'grid' : 'none';
   document.getElementById('pan-main').style.display = myRole === 'panelist' ? 'grid' : 'none';
+
+  // Show identity picker if panelist hasn't selected their name yet
+  if (myRole === 'panelist' && !myPanelistId) {
+    showIdentityPicker();
+  }
+}
+
+function showIdentityPicker() {
+  const picker = document.getElementById('identity-picker');
+  picker.classList.add('visible');
+  renderPickerList();
+}
+
+function renderPickerList() {
+  const el = document.getElementById('picker-list');
+  if (!state.panelists.length) {
+    el.innerHTML = '<div class="picker-waiting">Waiting for moderator to add panelists…<br><br>Keep this page open — it will update automatically.</div>';
+    return;
+  }
+  el.innerHTML = state.panelists.map(p => {
+    const c = COLORS[p.color] || COLORS.teal;
+    return `<button class="picker-card" onclick="selectIdentity('${p.id}')">
+      <div class="avatar" style="background:${c.bg};color:${c.text};width:40px;height:40px;font-size:13px;flex-shrink:0;">${initials(p.name)}</div>
+      <div>
+        <div class="p-name">${p.name}</div>
+        <div class="p-email">${p.email || 'tap to join as this person'}</div>
+      </div>
+    </button>`;
+  }).join('');
 }
 
 // ── Render ──
@@ -813,7 +921,14 @@ function render() {
   renderPanelistList();
   renderTimer();
   renderLog();
-  if (myRole === 'panelist') { renderAlerts(); renderIdentity(); }
+  if (myRole === 'panelist') {
+    // If picker is visible, refresh its list (moderator may have just added panelists)
+    if (document.getElementById('identity-picker').classList.contains('visible')) {
+      renderPickerList();
+    } else {
+      renderAlerts();
+    }
+  }
 }
 
 function renderPanelistList() {
@@ -883,45 +998,66 @@ function renderAlerts() {
   const el = document.getElementById('alert-cards');
   if (!el) return;
   const alerts = state.alerts[myPanelistId] || [];
+
+  // Update header with panelist name
+  const me = state.panelists.find(p => p.id === myPanelistId);
+  const nameLabel = document.getElementById('pan-name-label');
+  if (nameLabel && me) nameLabel.textContent = `Alerts for ${me.name}`;
+
   if (!alerts.length) {
-    el.innerHTML = '<div class="no-alerts"><div class="no-alerts-icon">✅</div>No alerts yet — you\'re all good!</div>';
+    el.innerHTML = '<div class="no-alerts"><div class="no-alerts-icon">✅</div>No active alerts — you\'re all good!</div>';
+  } else {
+    el.innerHTML = alerts.map(a => {
+      const icon = a.level === 'danger' ? '🔴' : a.level === 'warning' ? '⏰' : '📢';
+      return `<div class="alert-card ${a.level}">
+        <div class="alert-card-header">
+          <div class="alert-icon">${icon}</div>
+          <div class="alert-headline">${a.label}</div>
+          <div class="alert-sub">${a.msg}</div>
+        </div>
+        <div class="alert-card-footer">
+          <div class="alert-meta">${a.time} · from moderator${a.auto ? ' · auto' : ''}</div>
+          <button class="ack-btn" onclick="ws_ack('${a.id}')">Got it ✓</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  renderHistory();
+}
+
+function renderHistory() {
+  const listEl = document.getElementById('history-list');
+  const toggleEl = document.getElementById('history-toggle');
+  const labelEl = document.getElementById('history-label');
+  if (!listEl || !toggleEl) return;
+
+  if (!alertHistory.length) {
+    toggleEl.style.display = 'none';
     return;
   }
-  el.innerHTML = alerts.map(a => {
+
+  toggleEl.style.display = 'flex';
+  labelEl.textContent = `Alert history (${alertHistory.length})`;
+  listEl.innerHTML = alertHistory.map(a => {
     const icon = a.level === 'danger' ? '🔴' : a.level === 'warning' ? '⏰' : '📢';
-    return `<div class="alert-card ${a.level}">
+    return `<div class="alert-card ${a.level} acknowledged" style="margin-top:8px;">
       <div class="alert-card-header">
-        <div class="alert-icon">${icon}</div>
+        <div class="alert-icon" style="font-size:24px;">${icon}</div>
         <div class="alert-headline">${a.label}</div>
         <div class="alert-sub">${a.msg}</div>
       </div>
       <div class="alert-card-footer">
-        <div class="alert-meta">${a.time} · from moderator${a.auto ? ' · auto' : ''}</div>
-        <button class="ack-btn" onclick="ws_ack('${a.id}')">Got it ✓</button>
+        <div class="ack-label">✓ Acknowledged · ${a.time}</div>
       </div>
     </div>`;
   }).join('');
 }
 
-function renderIdentity() {
-  const el = document.getElementById('identity-list');
-  if (!el) return;
-  if (!state.panelists.length) {
-    el.innerHTML = '<div style="color:var(--hint);font-size:12px;">Waiting for moderator to add panelists…</div>';
-    return;
-  }
-  el.innerHTML = state.panelists.map(p => {
-    const c = COLORS[p.color] || COLORS.teal;
-    const selected = myPanelistId === p.id;
-    return `<button class="identity-btn ${selected ? 'selected' : ''}" onclick="selectIdentity('${p.id}')">
-      <div class="avatar" style="background:${c.bg};color:${c.text};width:32px;height:32px;font-size:11px;flex-shrink:0;">${initials(p.name)}</div>
-      <div style="text-align:left;">
-        <div class="i-name">${p.name}</div>
-        <div class="i-email">${p.email || 'tap to select'}</div>
-      </div>
-      ${selected ? '<span style="margin-left:auto;font-size:12px;color:var(--teal);">✓ You</span>' : ''}
-    </button>`;
-  }).join('');
+function toggleHistory() {
+  const toggle = document.getElementById('history-toggle');
+  const list = document.getElementById('history-list');
+  toggle.classList.toggle('open');
+  list.classList.toggle('open');
 }
 
 // ── WS Actions ──
@@ -996,16 +1132,22 @@ function clampTimeInput(el, max) {
   if (isNaN(v) || v < 0) el.value = 0;
   else if (v > max) el.value = max;
 }
-
 function ws_toggleTimer() { ws_send({ type: 'TIMER_TOGGLE' }); }
 function ws_resetTimer() { ws_send({ type: 'TIMER_RESET' }); }
 
 function ws_ack(alertId) {
+  // Find the alert and save to history before acknowledging
+  const alerts = state.alerts[myPanelistId] || [];
+  const alert = alerts.find(a => a.id === alertId);
+  if (alert) alertHistory.unshift(alert);
   ws_send({ type: 'ACK_ALERT', panelistId: myPanelistId, alertId });
 }
 
 function selectIdentity(id) {
   myPanelistId = id;
+  // Dismiss picker
+  document.getElementById('identity-picker').classList.remove('visible');
+  // Reconnect with identity
   ws.close();
   connectWS(sessionId, 'panelist', id);
 }
@@ -1019,12 +1161,38 @@ function hideShare(e) {
   if (!e || e.target === document.getElementById('share-modal'))
     document.getElementById('share-modal').classList.remove('visible');
 }
+
+function copyWithFeedback(text, btnId) {
+  const btn = document.getElementById(btnId);
+  const original = btn.textContent;
+  (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.resolve(document.execCommand('copy')))
+    .then(() => {
+      btn.textContent = 'Copied ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 2000);
+    }).catch(() => {});
+}
+
 function copyCode() {
-  navigator.clipboard?.writeText(sessionId) || (document.getElementById('share-code').select(), document.execCommand('copy'));
+  copyWithFeedback(sessionId, 'copy-code-btn');
 }
 function copyLink() {
+  copyWithFeedback(`${location.origin}?session=${sessionId}`, 'copy-link-btn');
+}
+
+function sendEmailInvite() {
+  const emailInput = document.getElementById('invite-email');
+  const email = emailInput.value.trim();
   const link = `${location.origin}?session=${sessionId}`;
-  navigator.clipboard?.writeText(link) || (document.getElementById('share-link').select(), document.execCommand('copy'));
+  const subject = encodeURIComponent('You\'re invited to join a Buzzr panel session');
+  const body = encodeURIComponent(
+    `Hi,\n\nYou've been invited to join a panel session using Buzzr.\n\n` +
+    `Join here: ${link}\n\nOr enter this code manually: ${sessionId}\n\n` +
+    `Open the link on your phone before the session starts and select your name.\n\nSee you there!`
+  );
+  const mailto = `mailto:${email}?subject=${subject}&body=${body}`;
+  window.location.href = mailto;
+  emailInput.value = '';
 }
 
 function generateQR() {
